@@ -1,4 +1,5 @@
 from datetime import time
+from logging import exception
 from PIL import Image
 from google.api_core.exceptions import DataLoss
 from google.cloud import storage
@@ -7,7 +8,11 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.keys import Keys
+import requests
+import pprint
 import urllib
+import time
 import os
 
 categories = {
@@ -37,18 +42,56 @@ def download_image(url):
 
 def upload_to_bucket(blob_name, img_url, bucket_name):
     """ Upload data to a bucket"""
+    links = []
     download_image(img_url)
 
     storage_client = storage.Client()
     bucket = storage_client.get_bucket(bucket_name)
-    blob = bucket.blob(blob_name)
+    blob = bucket.blob(blob_name + "0")
     blob.upload_from_filename("temp.jpg")
-    link = 'gs://' + bucket_name + "/" + blob_name
+    links.append('gs://' + bucket_name + "/" + blob_name+ "0")
+    
+    for i in range(1, 6):
+        try:
+            blob = bucket.blob(blob_name + str(i))
+            blob.upload_from_filename("temp" + str(i) + ".png")
+            links.append('gs://' + bucket_name + "/" + blob_name+ str(i))
 
-    return link
+        except:
+            pass
 
-def getLoblawData(link, productsetid):
-    with webdriver.Chrome("C:\\Users\\Noor\\Downloads\\chromedriver_win32 (1)\\chromedriver.exe") as driver:
+    return links
+
+def googleSearch(item):
+
+    with webdriver.Chrome(cdcd) as driver:
+        driver.get("https://images.google.com/")
+        wait = WebDriverWait(driver, 10)
+  
+        # Type the search query in the search box
+        box = driver.find_element_by_xpath('//*[@id="sbtc"]/div/div[2]/input')
+        box.send_keys(item)
+        box.send_keys(Keys.ENTER)
+
+        for i in range(1, 6):
+            try:
+                img = driver.find_element_by_xpath(
+                    '//*[@id="islrg"]/div[1]/div[' +
+                str(i) + ']/a[1]/div[1]/img')
+
+                img.click()
+                time.sleep(0.5)
+
+                img2 = driver.find_element_by_xpath('//*[@id="Sva75c"]/div/div/div[3]/div[2]/c-wiz/div/div[1]/div[1]/div[2]/div/a/img')
+                img2.screenshot("temp" + str(i) + ".png")
+                time.sleep(0.2)
+            except:
+                pass
+
+
+cdcd = "C:\\Users\\Noor\\Downloads\\chromedriver_win32 (1)\\chromedriver.exe"
+def getLoblawData(link, productsetid, starting_id):
+    with webdriver.Chrome(cdcd) as driver:
         driver.get(link)
         wait = WebDriverWait(driver, 10)
         data = []
@@ -59,31 +102,34 @@ def getLoblawData(link, productsetid):
 
         # test item data
 
-        divs = driver.find_elements(By.CLASS_NAME("product-tile--marketplace")) #driver.find_elements_by_class_name("product-tile--marketplace")
-        return [1 for i in range(len(divs))]
+        divs = driver.find_elements_by_class_name("product-tile--marketplace")
+        #return [1 for i in range(len(divs))]
 
-        id = 100
+        id = starting_id
 
         for product in divs:
             try:
+                driver.execute_script("return arguments[0].scrollIntoView();", product)
                 product_image = product.find_elements_by_class_name("responsive-image")[0].get_attribute("src")
                 product_name = product.find_elements_by_class_name("product-name__item--name")[0].text.replace(",", "").replace(" ", "_")
                 product_price = product.find_elements_by_class_name("price__value")[0].text
-            
-                """
-                extraTags = {"product-name__item--brand" : -1}
-                for tagClassName in extraTags:
-                    product_tag = divs[3].find_elements_by_class_name(tagClassName)
-                    if len(product_tag) > 0:
-                        extraTags[tagClassName] =  product_tag[0].text
-                """
+                googleSearch(product_name)
 
-            except:
+                internal_urls = upload_to_bucket(product_name, product_image, "shopadvisr-bucket")
+                for uri in internal_urls:
+                    data.append([uri, product_name, productsetid, "product_id" + str(id), "general-v1", "", "price="+str(product_price), ""])
+
+                id += 1
+
+                #For testing
+                if id >= starting_id + 5:
+                    break 
+
+            except :
+                print("Could not find")
                 continue
             
-            internal_url = "randoLink" #upload_to_bucket(product_name, product_image, "shopadvisr-bucket")
-            data.append([internal_url, product_name, productsetid, "product_id" + str(id), "general-v1", "", "price="+str(product_price), ""])
-            id += 1
+            
 
         return data
 
@@ -306,26 +352,27 @@ def list_reference_images(
         print('Reference image bounding polygons: {}'.format(
             image.bounding_polys))
 
+
 def main():
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
-    product_set_id = "product_set6"
+    product_set_id = "product_set8"
     
-    """create_product_set("shopadvisr", "us-east1", product_set_id, "productTest")
+    create_product_set("shopadvisr", "us-east1", product_set_id, "productTest")
     print("Created empty set")
     
-    data = getLoblawData(categories["Food"], product_set_id)
+    data = getLoblawData(categories["Food"], product_set_id, 200)
     print("Got data", len(data))
 
     link = createCSV(data)
     print("Created csv at", link)
 
     import_product_sets("shopadvisr", "us-east1", link)
-    print("Imported product data")"""
+    print("Imported product data")
     
-    get_product_set("shopadvisr", "us-east1", product_set_id)
+    #get_product_set("shopadvisr", "us-east1", product_set_id)
     #list_products_in_product_set("shopadvisr", "us-east1", product_set_id)
     #list_reference_images("shopadvisr", "us-east1", "product_id100")
-    get_similar_products_file("shopadvisr", "us-east1", product_set_id, "general-v1", "ref.jpg", "")  
+    #get_similar_products_file("shopadvisr", "us-east1", product_set_id, "general-v1", "ref.jpg", "")  
 
     #data = getLoblawData(categories["Food"], product_set_id)
     #print(len(data))
