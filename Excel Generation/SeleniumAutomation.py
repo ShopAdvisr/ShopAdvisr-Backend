@@ -58,7 +58,10 @@ def getLoblawData(link, productsetid):
         #element.click()
 
         # test item data
-        divs = driver.find_elements_by_class_name("product-tile--marketplace")
+
+        divs = driver.find_elements(By.CLASS_NAME("product-tile--marketplace")) #driver.find_elements_by_class_name("product-tile--marketplace")
+        return [1 for i in range(len(divs))]
+
         id = 100
 
         for product in divs:
@@ -78,7 +81,7 @@ def getLoblawData(link, productsetid):
             except:
                 continue
             
-            internal_url = upload_to_bucket(product_name, product_image, "shopadvisr-bucket")
+            internal_url = "randoLink" #upload_to_bucket(product_name, product_image, "shopadvisr-bucket")
             data.append([internal_url, product_name, productsetid, "product_id" + str(id), "general-v1", "", "price="+str(product_price), ""])
             id += 1
 
@@ -319,10 +322,13 @@ def main():
     import_product_sets("shopadvisr", "us-east1", link)
     print("Imported product data")"""
     
-    #get_product_set("shopadvisr", "us-east1", product_set_id)
+    get_product_set("shopadvisr", "us-east1", product_set_id)
     #list_products_in_product_set("shopadvisr", "us-east1", product_set_id)
     #list_reference_images("shopadvisr", "us-east1", "product_id100")
-    #get_similar_products_file("shopadvisr", "us-east1", product_set_id,  "general-v1", "ref.jpg", "")  
+    get_similar_products_file("shopadvisr", "us-east1", product_set_id, "general-v1", "ref.jpg", "")  
+
+    #data = getLoblawData(categories["Food"], product_set_id)
+    #print(len(data))
 
 if __name__ == '__main__':
     main()
