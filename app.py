@@ -17,8 +17,9 @@ def create_app():
     @app.route('/prodsuck',methods = ["GET"])
     def product_suggestion():
 
-        data = json.loads(request.get_data().decode('UTF-8'))
-        productSuggestion.run(base64.decodebytes(data['audio']))
+        data = request.get_data()
+
+        productSuggestion.run(base64.decodebytes(data))
 
 
 

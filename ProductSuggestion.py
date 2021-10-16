@@ -3,10 +3,9 @@ from dotenv import load_dotenv
 import requests
 import time
 import pprint
-
+import csv
 load_dotenv()
-
-
+#TODO: CHECK IF WORD IS NOUN
 class ProductSuggestion:
     endpoint = "https://api.assemblyai.com/v2/transcript"
 
@@ -17,14 +16,28 @@ class ProductSuggestion:
     }
 
     def __init__(self):
-        pass
+        print(True)
+
+
 
     def run(self, audio):
         audio_url = self.upload_audio(audio)
-        audio_id = self.process_audio(audio)
+        audio_id = self.process_audio(audio_url)
 
         keywords, topics = self.get_audio_data(audio_id)
-        print(keywords,topics)
+        print(keywords, topics)
+        associated_words = self.get_associated_words(keywords)
+
+
+    def get_associated_words(self, keywords):
+        all_words = set()
+        for k in keywords:
+            for w in k[0].split():
+                related = requests.get(f"https://api.datamuse.com/words?rel_trg={w}").json()
+
+                words = {(i['word'], k[1] * i["score"]) for i in related if i['word']}
+                all_words.union(words)
+        return all_words
 
     def process_audio(self, audio_url):
         req_data = {
@@ -57,3 +70,4 @@ class ProductSuggestion:
                                  headers=self.headers,
                                  data=audio)
         return response.json()["upload_url"]
+ProductSuggestion()
