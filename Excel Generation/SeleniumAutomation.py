@@ -1,4 +1,5 @@
-import os
+from datetime import time
+from PIL import Image
 from google.api_core.exceptions import DataLoss
 from google.cloud import storage
 from google.cloud import vision
@@ -7,7 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 import urllib
-import csv
+import os
 
 categories = {
     "Food" : "https://www.loblaws.ca/food/c/27985?navid=flyout-L2-Food",
@@ -25,8 +26,14 @@ def download_image(url):
     with open("temp.png", "wb") as f:
         with urllib.request.urlopen(req) as r:
             f.write(r.read())
-            print("done")
             f.close()
+
+            png = Image.open("temp.png").convert('RGBA')
+            background = Image.new('RGBA', png.size, (255,255,255))
+
+            alpha_composite = Image.alpha_composite(background, png).convert("RGB")
+            alpha_composite.save('temp.jpg', 'JPEG', quality=80)
+            print("done")
 
 def upload_to_bucket(blob_name, img_url, bucket_name):
     """ Upload data to a bucket"""
@@ -35,61 +42,91 @@ def upload_to_bucket(blob_name, img_url, bucket_name):
     storage_client = storage.Client()
     bucket = storage_client.get_bucket(bucket_name)
     blob = bucket.blob(blob_name)
-    blob.upload_from_filename("temp.png")
-    link = 'gs://' + blob.path_helper(bucket_name, blob_name)
+    blob.upload_from_filename("temp.jpg")
+    link = 'gs://' + bucket_name + "/" + blob_name
 
     return link
 
-def getLoblawData(link):
+def getLoblawData(link, productsetid):
     with webdriver.Chrome("C:\\Users\\Noor\\Downloads\\chromedriver_win32 (1)\\chromedriver.exe") as driver:
         driver.get(link)
         wait = WebDriverWait(driver, 10)
         data = []
         
         # expand page
-        element = wait.until(expected_conditions. element_to_be_clickable((By.CLASS_NAME, "primary-button")))
+        element = wait.until(expected_conditions.element_to_be_clickable((By.CLASS_NAME, "primary-button")))
         #element.click()
 
         # test item data
         divs = driver.find_elements_by_class_name("product-tile--marketplace")
-        id = 0
+        id = 100
 
         for product in divs:
-            product_image = product.find_elements_by_class_name("responsive-image")[0].get_attribute("src")
-            product_name = product.find_elements_by_class_name("product-name__item--name")[0].text.replace(" ", "_")
-            product_price = product.find_elements_by_class_name("price__value")[0].text
+            try:
+                product_image = product.find_elements_by_class_name("responsive-image")[0].get_attribute("src")
+                product_name = product.find_elements_by_class_name("product-name__item--name")[0].text.replace(",", "").replace(" ", "_")
+                product_price = product.find_elements_by_class_name("price__value")[0].text
             
-            """
-            extraTags = {"product-name__item--brand" : -1}
-            for tagClassName in extraTags:
-                product_tag = divs[3].find_elements_by_class_name(tagClassName)
-                if len(product_tag) > 0:
-                    extraTags[tagClassName] =  product_tag[0].text
-            """
+                """
+                extraTags = {"product-name__item--brand" : -1}
+                for tagClassName in extraTags:
+                    product_tag = divs[3].find_elements_by_class_name(tagClassName)
+                    if len(product_tag) > 0:
+                        extraTags[tagClassName] =  product_tag[0].text
+                """
 
-            internal_url = upload_to_bucket(product_image, product_name, "shopadvisr-bucket")
-            data.append([internal_url, product_name, "product_set0", "product_id" + str(id), "general-v1", "", "price="+str(product_price), ""])
+            except:
+                continue
+            
+            internal_url = upload_to_bucket(product_name, product_image, "shopadvisr-bucket")
+            data.append([internal_url, product_name, productsetid, "product_id" + str(id), "general-v1", "", "price="+str(product_price), ""])
             id += 1
 
         return data
 
 def createCSV(data):
     path = "ProductData.csv"
+
     with open(path, 'w') as csvfile:
-        filewriter = csv.writer(csvfile, delimiter=',',
-                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        for r in range(len(data)):
-            filewriter.writerow(data[r])
-        
+        csvfile.write("\n".join([",".join(e) for e in data]))        
         csvfile.close()
         print("Product data saved to", path)
-
+    
     storage_client = storage.Client()
     bucket = storage_client.get_bucket("shopadvisr-bucket")
     blob = bucket.blob("ProductData")
     blob.upload_from_filename(path)
     link = "gs://shopadvisr-bucket/ProductData"
     return link
+
+from google.cloud import vision
+
+def create_product_set(
+        project_id, location, product_set_id, product_set_display_name):
+    """Create a product set.
+    Args:
+        project_id: Id of the project.
+        location: A compute region name.
+        product_set_id: Id of the product set.
+        product_set_display_name: Display name of the product set.
+    """
+    client = vision.ProductSearchClient()
+
+    # A resource that represents Google Cloud Platform location.
+    location_path = f"projects/{project_id}/locations/{location}"
+
+    # Create a product set with the product set specification in the region.
+    product_set = vision.ProductSet(
+            display_name=product_set_display_name)
+
+    # The response is the product set with `name` populated.
+    response = client.create_product_set(
+        parent=location_path,
+        product_set=product_set,
+        product_set_id=product_set_id)
+
+    # Display the product set information.
+    print('Product set name: {}'.format(response.name))
 
 def import_product_sets(project_id, location, gcs_uri):
     """Import images of different products in the product set.
@@ -120,17 +157,11 @@ def import_product_sets(project_id, location, gcs_uri):
     print('Processing done.')
 
     for i, status in enumerate(result.statuses):
-        print('Status of processing line {} of the csv: {}'.format(
-            i, status))
         # Check the status of reference image
         # `0` is the code for OK in google.rpc.Code.
-        if status.code == 0:
-            reference_image = result.reference_images[i]
-            print(reference_image)
-        else:
+        if status.code != 0:
             print('Status code not OK: {}'.format(status.message))
-
-
+        
 def get_similar_products_file(
         project_id, location, product_set_id, product_category,
         file_path, filter):
@@ -173,6 +204,8 @@ def get_similar_products_file(
     response = image_annotator_client.product_search(
         image, image_context=image_context)
 
+    print(response)
+
     index_time = response.product_search_results.index_time
     print('Product set index time: ')
     print(index_time)
@@ -192,19 +225,104 @@ def get_similar_products_file(
         print('Product description: {}\n'.format(product.description))
         print('Product labels: {}\n'.format(product.product_labels))
 
+from google.cloud import vision
+
+def get_product_set(project_id, location, product_set_id):
+    """Get info about the product set.
+    Args:
+        project_id: Id of the project.
+        location: A compute region name.
+        product_set_id: Id of the product set.
+    """
+    client = vision.ProductSearchClient()
+
+    # Get the full path of the product set.
+    product_set_path = client.product_set_path(
+        project=project_id, location=location,
+        product_set=product_set_id)
+
+    # Get complete detail of the product set.
+    product_set = client.get_product_set(name=product_set_path)
+
+    # Display the product set information.
+    print('Product set name: {}'.format(product_set.name))
+    print('Product set id: {}'.format(product_set.name.split('/')[-1]))
+    print('Product set display name: {}'.format(product_set.display_name))
+    print('Product set index time: ')
+    print(product_set.index_time)
+
+def list_products_in_product_set(
+        project_id, location, product_set_id):
+    """List all products in a product set.
+    Args:
+        project_id: Id of the project.
+        location: A compute region name.
+        product_set_id: Id of the product set.
+    """
+    client = vision.ProductSearchClient()
+
+    # Get the full path of the product set.
+    product_set_path = client.product_set_path(
+        project=project_id, location=location,
+        product_set=product_set_id)
+
+    # List all the products available in the product set.
+    products = client.list_products_in_product_set(name=product_set_path)
+
+    # Display the product information.
+    for product in products:
+        print('Product name: {}'.format(product.name))
+        print('Product id: {}'.format(product.name.split('/')[-1]))
+        print('Product display name: {}'.format(product.display_name))
+        print('Product description: {}'.format(product.description))
+        print('Product category: {}'.format(product.product_category))
+        print('Product labels: {}'.format(product.product_labels))
+
+def list_reference_images(
+        project_id, location, product_id):
+    """List all images in a product.
+    Args:
+        project_id: Id of the project.
+        location: A compute region name.
+        product_id: Id of the product.
+    """
+    client = vision.ProductSearchClient()
+
+    # Get the full path of the product.
+    product_path = client.product_path(
+        project=project_id, location=location, product=product_id)
+
+    # List all the reference images available in the product.
+    reference_images = client.list_reference_images(parent=product_path)
+
+    # Display the reference image information.
+    for image in reference_images:
+        print('Reference image name: {}'.format(image.name))
+        print('Reference image id: {}'.format(image.name.split('/')[-1]))
+        print('Reference image uri: {}'.format(image.uri))
+        print('Reference image bounding polygons: {}'.format(
+            image.bounding_polys))
+
 def main():
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
-
-    data = getLoblawData(categories["Food"])
+    product_set_id = "product_set6"
+    
+    """create_product_set("shopadvisr", "us-east1", product_set_id, "productTest")
+    print("Created empty set")
+    
+    data = getLoblawData(categories["Food"], product_set_id)
     print("Got data", len(data))
 
     link = createCSV(data)
     print("Created csv at", link)
 
-    import_product_sets("shopadvisr", "us-east1")
-    get_similar_products_file("shopadvisr", "us-east1", "4dd865abae2c6eae", "packagedgoods-v1", "temp.png", "category:food")
+    import_product_sets("shopadvisr", "us-east1", link)
+    print("Imported product data")"""
     
-    print("Done")
+    #get_product_set("shopadvisr", "us-east1", product_set_id)
+    #list_products_in_product_set("shopadvisr", "us-east1", product_set_id)
+    #list_reference_images("shopadvisr", "us-east1", "product_id100")
+    #get_similar_products_file("shopadvisr", "us-east1", product_set_id,  "general-v1", "ref.jpg", "")  
 
 if __name__ == '__main__':
     main()
