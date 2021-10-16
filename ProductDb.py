@@ -3,7 +3,7 @@ import csv
 
 class ProductDb:
     def __init__(self):
-        with open(f"vision_product_search_product_catalog.csv",newline='') as g:
+        with open(f"vision_product_search_product_catalog.csv", newline='') as g:
             reader = csv.reader(g)
             self.data = list(reader)
     def get_product_by_name(self,name):
@@ -11,3 +11,4 @@ class ProductDb:
             if product[1]==name:
                 return product
 
+db = ProductDb()
