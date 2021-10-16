@@ -17,7 +17,7 @@ def check():
     data = json.loads(request.get_data().decode('UTF-8'))
 
 
-@app.route('/suggestions', methods=["GET"])
+@app.route('/suggestions', methods=["GET","POST"])
 def product_suggestion():
     print(f'{request.args=}')
     print(f'{request.data=}')
