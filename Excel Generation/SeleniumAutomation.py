@@ -2,6 +2,7 @@ from datetime import time
 from logging import exception
 from PIL import Image
 from google.api_core.exceptions import DataLoss
+from selenium.webdriver.chrome.options import Options
 from google.cloud import storage
 from google.cloud import vision
 from selenium import webdriver
@@ -14,6 +15,9 @@ import pprint
 import urllib
 import time
 import os
+
+#chrome_options = Options()
+#chrome_options.add_argument("--headless")
 
 categories = {
     "Food" : "https://www.loblaws.ca/food/c/27985?navid=flyout-L2-Food",
@@ -38,7 +42,6 @@ def download_image(url):
 
             alpha_composite = Image.alpha_composite(background, png).convert("RGB")
             alpha_composite.save('temp.jpg', 'JPEG', quality=80)
-            print("done")
 
 def upload_to_bucket(blob_name, img_url, bucket_name):
     """ Upload data to a bucket"""
@@ -47,15 +50,15 @@ def upload_to_bucket(blob_name, img_url, bucket_name):
 
     storage_client = storage.Client()
     bucket = storage_client.get_bucket(bucket_name)
-    blob = bucket.blob(blob_name + "0")
+    blob = bucket.blob(blob_name + "-d-0")
     blob.upload_from_filename("temp.jpg")
-    links.append('gs://' + bucket_name + "/" + blob_name+ "0")
+    links.append('gs://' + bucket_name + "/" + blob_name+ "-d-0")
     
-    for i in range(1, 6):
+    for i in range(1, 10):
         try:
-            blob = bucket.blob(blob_name + str(i))
+            blob = bucket.blob(blob_name + "-d-" + str(i))
             blob.upload_from_filename("temp" + str(i) + ".png")
-            links.append('gs://' + bucket_name + "/" + blob_name+ str(i))
+            links.append('gs://' + bucket_name + "/" + blob_name + "-d-" + str(i))
 
         except:
             pass
@@ -70,10 +73,10 @@ def googleSearch(item):
   
         # Type the search query in the search box
         box = driver.find_element_by_xpath('//*[@id="sbtc"]/div/div[2]/input')
-        box.send_keys(item)
+        box.send_keys(item.replace("_", " ") + " white background")
         box.send_keys(Keys.ENTER)
 
-        for i in range(1, 6):
+        for i in range(1, 10):
             try:
                 img = driver.find_element_by_xpath(
                     '//*[@id="islrg"]/div[1]/div[' +
@@ -84,54 +87,60 @@ def googleSearch(item):
 
                 img2 = driver.find_element_by_xpath('//*[@id="Sva75c"]/div/div/div[3]/div[2]/c-wiz/div/div[1]/div[1]/div[2]/div/a/img')
                 img2.screenshot("temp" + str(i) + ".png")
-                time.sleep(0.2)
+                time.sleep(0.5)
             except:
                 pass
 
-
 cdcd = "C:\\Users\\Noor\\Downloads\\chromedriver_win32 (1)\\chromedriver.exe"
-def getLoblawData(link, productsetid, starting_id):
-    with webdriver.Chrome(cdcd) as driver:
-        driver.get(link)
-        wait = WebDriverWait(driver, 10)
-        data = []
-        
-        # expand page
-        element = wait.until(expected_conditions.element_to_be_clickable((By.CLASS_NAME, "primary-button")))
-        #element.click()
+def getLoblawData(productsetid, starting_id):
+    id = starting_id
+    data = []
 
-        # test item data
+    for category in categories:
+        link = categories[category]
 
-        divs = driver.find_elements_by_class_name("product-tile--marketplace")
-        #return [1 for i in range(len(divs))]
+        with webdriver.Chrome(cdcd) as driver:
+            driver.get(link)
+            wait = WebDriverWait(driver, 10)
+            print("=========", category, "=========")
 
-        id = starting_id
+            # expand page
+            element = wait.until(expected_conditions.element_to_be_clickable((By.CLASS_NAME, "primary-button")))
+            #time.sleep(1)
+            #element.click()
 
-        for product in divs:
-            try:
-                driver.execute_script("return arguments[0].scrollIntoView();", product)
-                product_image = product.find_elements_by_class_name("responsive-image")[0].get_attribute("src")
-                product_name = product.find_elements_by_class_name("product-name__item--name")[0].text.replace(",", "").replace(" ", "_")
-                product_price = product.find_elements_by_class_name("price__value")[0].text
-                googleSearch(product_name)
+            # test item data
+            time.sleep(1)
+            divs = driver.find_elements_by_class_name("product-tile--marketplace")
 
-                internal_urls = upload_to_bucket(product_name, product_image, "shopadvisr-bucket")
-                for uri in internal_urls:
-                    data.append([uri, product_name, productsetid, "product_id" + str(id), "general-v1", "", "price="+str(product_price), ""])
+            for product in divs:
+                try:
+                    id += 1
 
-                id += 1
+                    driver.execute_script("return arguments[0].scrollIntoView();", product)
+                    product_image = product.find_elements_by_class_name("responsive-image")[0].get_attribute("src")
+                    product_name = product.find_elements_by_class_name("product-name__item--name")[0].text.replace(",", "").replace(" ", "_")
+                    product_price = product.find_elements_by_class_name("price__value")[0].text
+                    googleSearch(product_name)
 
-                #For testing
-                if id >= starting_id + 5:
-                    break 
+                    internal_urls = upload_to_bucket(product_name, product_image, "shopadvisr-bucket")
+                    x=0
+                    for uri in internal_urls:
+                        data.append([uri, product_name+str(x), productsetid, "product_id" + str(id), "general-v1", "", "price="+str(product_price), ""])
+                        x+=1
 
-            except :
-                print("Could not find")
-                continue
-            
-            
+                    print("Handled",product_name)
 
-        return data
+                    #Testing
+                    if id >= starting_id + 10:
+                        break
+
+                except :
+                    print("Could not find")
+                    continue
+        break
+
+    return data
 
 def createCSV(data):
     path = "ProductData.csv"
@@ -355,12 +364,12 @@ def list_reference_images(
 
 def main():
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
-    product_set_id = "product_set8"
-    
-    create_product_set("shopadvisr", "us-east1", product_set_id, "productTest")
+    product_set_id = "product_set17"
+    """
+    create_product_set("shopadvisr", "us-east1", product_set_id, "moreImagesTest")
     print("Created empty set")
     
-    data = getLoblawData(categories["Food"], product_set_id, 200)
+    data = getLoblawData(product_set_id, 1750)
     print("Got data", len(data))
 
     link = createCSV(data)
@@ -368,11 +377,12 @@ def main():
 
     import_product_sets("shopadvisr", "us-east1", link)
     print("Imported product data")
-    
+    """
+
     #get_product_set("shopadvisr", "us-east1", product_set_id)
     #list_products_in_product_set("shopadvisr", "us-east1", product_set_id)
-    #list_reference_images("shopadvisr", "us-east1", "product_id100")
-    #get_similar_products_file("shopadvisr", "us-east1", product_set_id, "general-v1", "ref.jpg", "")  
+    #list_reference_images("shopadvisr", "us-east1", "product_id1760")
+    #get_similar_products_file("shopadvisr", "us-east1", product_set_id, "general-v1", "temp.jpg", "")  
 
     #data = getLoblawData(categories["Food"], product_set_id)
     #print(len(data))
