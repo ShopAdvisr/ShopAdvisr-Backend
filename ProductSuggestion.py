@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 import requests
 import time
+import sys
 import pprint
 import csv
 
@@ -23,10 +24,13 @@ class ProductSuggestion:
 
     def run(self, audio):
         print(audio)
+        sys.stdout.flush()
         audio_url = self.upload_audio(audio)
         print(audio_url)
+        sys.stdout.flush()
         audio_id = self.process_audio(audio_url)
         print(audio_id)
+        sys.stdout.flush()
 
         keywords, topics = self.get_audio_data(audio_id)
         print(keywords, topics)
@@ -67,6 +71,7 @@ class ProductSuggestion:
             if data["status"] in ["error", "completed"]:
                 completed = True
         print(data)
+        sys.stdout.flush()
 
         keywords = [(i['text'], i['rank']) for i in data['auto_highlights_result']['results']]
 
