@@ -1,3 +1,5 @@
+import sys
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import json
@@ -17,6 +19,10 @@ def check():
 
 @app.route('/suggestions', methods=["GET"])
 def product_suggestion():
+    print(f'{request.args=}')
+    print(f'{request.data=}')
+    print(f'{request.form=}')
+    sys.stdout.flush()
     data = request.get_data()
 
     return productSuggestion.run(base64.decodebytes(data))

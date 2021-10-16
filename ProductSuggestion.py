@@ -36,7 +36,7 @@ class ProductSuggestion:
         print(keywords, topics)
         return {'words':keywords,'topics':topics}
         associated_words = self.get_associated_words(keywords)
-        # for word in associated_words:
+        #for word in associated_words:
 
 
 
