@@ -21,8 +21,8 @@ class ProductSuggestion:
 
 
     def run(self, audio):
-        audio_url = self.upload_audio(audio)
-        audio_id = self.process_audio(audio_url)
+        # audio_url = self.upload_audio(audio)
+        # audio_id = self.process_audio(audio_url)
 
         keywords, topics = self.get_audio_data(audio_id)
         print(keywords, topics)

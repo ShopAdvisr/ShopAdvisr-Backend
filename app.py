@@ -14,7 +14,7 @@ def create_app():
     @app.route('/data', methods=["GET"])
     def check():
         data = json.loads(request.get_data().decode('UTF-8'))
-    @app.route('/prodsuck',methods = ["GET"])
+    @app.route('/suggestions',methods = ["GET"])
     def product_suggestion():
 
         data = request.get_data()
