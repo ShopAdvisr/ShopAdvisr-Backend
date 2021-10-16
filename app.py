@@ -22,8 +22,12 @@ def product_suggestion():
     print(f'{request.args=}')
     print(f'{request.data=}')
     print(f'{request.form=}')
-    sys.stdout.flush()
+
     data = request.get_data()
+    print(f'{data=}')
+    print(base64.decodebytes(data))
+    sys.stdout.flush()
+
 
     return productSuggestion.run(base64.decodebytes(data))
 

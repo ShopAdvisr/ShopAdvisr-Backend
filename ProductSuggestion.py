@@ -23,8 +23,6 @@ class ProductSuggestion:
 
 
     def run(self, audio):
-        print(audio)
-        sys.stdout.flush()
         audio_url = self.upload_audio(audio)
         print(audio_url)
         sys.stdout.flush()
