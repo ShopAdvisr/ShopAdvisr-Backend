@@ -11,3 +11,4 @@ class ProductDb:
             if product[1]==name:
                 return product
 
+db = ProductDb()

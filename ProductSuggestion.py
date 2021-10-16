@@ -4,6 +4,7 @@ import requests
 import time
 import pprint
 import csv
+
 load_dotenv()
 #TODO: CHECK IF WORD IS NOUN
 class ProductSuggestion:
@@ -21,13 +22,18 @@ class ProductSuggestion:
 
 
     def run(self, audio):
+        print(audio)
         audio_url = self.upload_audio(audio)
+        print(audio_url)
         audio_id = self.process_audio(audio_url)
+        print(audio_id)
 
         keywords, topics = self.get_audio_data(audio_id)
         print(keywords, topics)
         return {'words':keywords,'topics':topics}
-        #associated_words = self.get_associated_words(keywords)
+        associated_words = self.get_associated_words(keywords)
+        for word in associated_words:
+
 
 
     def get_associated_words(self, keywords):
@@ -36,7 +42,7 @@ class ProductSuggestion:
             for w in k[0].split():
                 related = requests.get(f"https://api.datamuse.com/words?rel_trg={w}").json()
 
-                words = {(i['word'], k[1] * i["score"]) for i in related if i['word']}
+                words = {(i['word'], k[1]*1000 * i["score"]) for i in related if i['word']}
                 all_words.union(words)
         return all_words
 
@@ -60,6 +66,7 @@ class ProductSuggestion:
             data = response.json()
             if data["status"] in ["error", "completed"]:
                 completed = True
+        print(data)
 
         keywords = [(i['text'], i['rank']) for i in data['auto_highlights_result']['results']]
 
