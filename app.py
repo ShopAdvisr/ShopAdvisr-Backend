@@ -19,7 +19,7 @@ def create_app():
 
         data = request.get_data()
 
-        productSuggestion.run(base64.decodebytes(data))
+        return productSuggestion.run(base64.decodebytes(data))
 
 
 
