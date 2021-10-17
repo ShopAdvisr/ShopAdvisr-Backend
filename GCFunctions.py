@@ -102,6 +102,9 @@ def productQuery(queryType, queryInfo, matchLimit, forcedCategory=None):
         labelSearch = queryType == "labels" and label.lower() or label.description.lower()
         labelValue = queryType == "labels" and len(labels) - labels.index(label) or label.score + len(label.description)
 
+        if len(labelSearch) <= 2 or labelSearch == "the": # most likely a filler word
+            continue
+
         for product_name in catalog:
             if labelSearch in product_name.lower():
                 insertMatch(catalog[product_name], labelValue)
@@ -141,11 +144,13 @@ def main():
     #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
     #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= "C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\credentials.json"
 
-    #matches = productQuery("image path", "temp6.png", 5)
+    #matches = productQuery("image path", "te.png", 5)
     #matches = productQuery("labels", ["birthday", "party"], 20)
     #matches = productQuery("labels", ["birthday", "gift", "for", "wife"], 20)
-    #matches = productQuery("labels", ["I", "want", "to", "take", "my", "baby", "in", "the", "car"], 5)
+    #matches = productQuery("labels", ["I", "want" "my", "baby", "to", "be", "safe", "in", "the", "car", "with", "my", "back", "turned"], 5)
     #matches = productQuery("labels", ["cat", "food"], 20)
+    #matches = productQuery("labels", ["cellery"], 20)
+    #matches = productQuery("labels", ["thanksgiving"], 20)
 
     #displayMatches(matches)
     pass
