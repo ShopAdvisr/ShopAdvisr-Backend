@@ -19,8 +19,6 @@ catalog = None
 def imageRecognition(img, isBinary = False):
     client = vision.ImageAnnotatorClient()
     if isBinary:
-        #print("Got the binary", img)
-        print(type(img))
         content = img
     else:
         # Loads the image into memory
@@ -29,13 +27,10 @@ def imageRecognition(img, isBinary = False):
         #print(content)
 
     image = vision.Image(content=content)
-    print(image)
 
     # Performs label detection on the image file
     response = client.label_detection(image=image)
     labels = response.label_annotations
-    print(len(labels))
-
     acceptedLabels = []
 
     #print('Labels:')
@@ -88,6 +83,8 @@ def productQuery(queryType, queryInfo, matchLimit, forcedCategory=None):
     elif queryType == "image binary":
         labels = imageRecognition(queryInfo, True)
 
+    print("Labels: ", labels)
+
     potentialMatches = []
     def insertMatch(product, score):
         for i in range(len(potentialMatches)):
@@ -123,7 +120,9 @@ def productQuery(queryType, queryInfo, matchLimit, forcedCategory=None):
             finalMatches.append(match)
     
     finalMatches.sort(key=sortLabelKey, reverse=True)
-    return [e[1] for e in finalMatches[:matchLimit]]
+    final = [e[1] for e in finalMatches[:matchLimit]]
+    print(final)
+    return final
 
 def displayMatches(matches):
     i = len(matches)
