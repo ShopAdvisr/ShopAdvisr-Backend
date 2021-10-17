@@ -35,8 +35,8 @@ def ocr():
 
 @app.route('/search', methods=["POST"])
 def search():
-    data = request.get_data()
-    return {"items": GCFunctions.productQuery("labels", data.split(), 20)}
+    data = json.loads(request.get_data().decode('UTF-8'))
+    return {"items": GCFunctions.productQuery("labels",data["text"].split(), 20)}
 
 
 if __name__ == '__main__':
