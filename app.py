@@ -29,8 +29,8 @@ def product_suggestion():
 
 @app.route('/ocr', methods=["POST"])
 def ocr():
+    print("ocr endpoint")
     data = request.get_data()
-    
     return {"items":GCFunctions.productQuery("image binary", base64.decodebytes(data), 5)}
 
 
