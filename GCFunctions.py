@@ -86,8 +86,12 @@ def productQuery(queryType, queryInfo, matchLimit):
     for label in labels[:5]:
         localMatches = []
         for product_name in catalog:
-            if label.description.lower() in product_name.lower():
-                localMatches.append([label.score + len(label.description), catalog[product_name]])
+            if queryType == "labels":
+                if label.lower() in product_name.lower():
+                    localMatches.append([len(labels) - labels.index(label), catalog[product_name]])
+            else:
+                if label.description.lower() in product_name.lower():
+                    localMatches.append([label.score + len(label.description), catalog[product_name]])
         
         localMatches.sort(key=sortLabelKey, reverse=True)
         for m in localMatches[:]: #2]:
