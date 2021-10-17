@@ -31,7 +31,9 @@ class ProductSuggestion:
         audio_id = self.process_audio(audio_url)
 
         keywords, topics ,text= self.get_audio_data(audio_id)
+
         associated_words = self.get_associated_words(keywords)
+        print(associated_words)
 
         return {'items':GCFunctions.productQuery("labels",associated_words,20),'text':text}
 

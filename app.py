@@ -30,7 +30,7 @@ def product_suggestion():
 @app.route('/ocr', methods=["POST"])
 def ocr():
     data = request.get_data()
-    return GCFunctions.productQuery("image binary", data, 5)
+    return {"items":GCFunctions.productQuery("image binary", data, 5)}
 
 
 @app.route('/search', methods=["POST"])
