@@ -43,7 +43,9 @@ def imageRecognition(img, isBinary = False):
     return acceptedLabels
 
 def init_import():
-    #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+    load_dotenv()
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= os.getenv("GOOGLE_APPLICATION_CREDENTIALS") 
+    
     import random
     global catalog
 
@@ -130,10 +132,10 @@ def displayMatches(matches):
 def main():
     #load_dotenv()
     #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
-    matches = productQuery("image path", "temp1.png", 5)
-    displayMatches(matches)
-    pass
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= os.getenv("GOOGLE_APPLICATION_CREDENTIALS") #"C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
+    #matches = productQuery("image path", "temp1.png", 5)
+    #displayMatches(matches)
+    #pass
 
 
 init_import()
