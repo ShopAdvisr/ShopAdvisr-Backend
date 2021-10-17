@@ -38,7 +38,7 @@ def imageRecognition(img, isBinary = False):
         if True: #not label.description.title() in categories:
             acceptedLabels.append(label)
 
-        #print(label.description, label.score)
+        print(label.description, label.score)
         
     return acceptedLabels
 
@@ -68,6 +68,7 @@ def init_import():
 def sortLabelKey(match):
     return match[0]
 
+
 def productQuery(queryType, queryInfo, matchLimit, forcedCategory=None):
     if catalog == None:
         init_import()
@@ -81,6 +82,13 @@ def productQuery(queryType, queryInfo, matchLimit, forcedCategory=None):
         labels = imageRecognition(queryInfo, True)
 
     potentialMatches = []
+    def insertMatch(product, score):
+        for i in range(len(potentialMatches)):
+            if potentialMatches[i][1]["Product ID"] == product["Product ID"]:
+                potentialMatches[i][0] += score
+                return
+        
+        potentialMatches.append([score, product])
 
     for label in labels[:5]:
         if queryType != "labels" and label.description.title() in categories:
@@ -90,10 +98,12 @@ def productQuery(queryType, queryInfo, matchLimit, forcedCategory=None):
         for product_name in catalog:
             if queryType == "labels":
                 if label.lower() in product_name.lower():
-                    potentialMatches.append([len(labels) - labels.index(label), catalog[product_name]])
+                    insertMatch(catalog[product_name], len(labels) - labels.index(label))
+                    #potentialMatches.append([, catalog[product_name]])
             else:
                 if label.description.lower() in product_name.lower():
-                    potentialMatches.append([label.score + len(label.description), catalog[product_name]])
+                    insertMatch(catalog[product_name], label.score + len(label.description))
+                    #potentialMatches.append([label.score + len(label.description), catalog[product_name]])
     
     categorScored = { e : 0 for e in categories}
     for match in potentialMatches:
@@ -121,7 +131,7 @@ def main():
     #load_dotenv()
     #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
-    matches = productQuery("image path", "ref.jpg", 5)
+    matches = productQuery("image path", "temp1.png", 5)
     displayMatches(matches)
     pass
 
