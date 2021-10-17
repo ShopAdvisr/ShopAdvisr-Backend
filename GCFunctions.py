@@ -89,7 +89,7 @@ def productQuery(queryType, queryInfo, matchLimit):
                 localMatches.append([label.score + len(label.description), catalog[product_name]])
         
         localMatches.sort(key=sortLabelKey, reverse=True)
-        for m in localMatches[:2]:
+        for m in localMatches[:]: #2]:
             potentialMatches.append(m)
     
     potentialMatches.sort(key=sortLabelKey, reverse=True)
