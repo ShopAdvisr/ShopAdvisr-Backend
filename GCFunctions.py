@@ -68,7 +68,7 @@ def init_import():
 def sortLabelKey(match):
     return match[0]
 
-def productQuery(queryType, queryInfo):
+def productQuery(queryType, queryInfo, matchLimit):
     if catalog == None:
         init_import()
 
@@ -77,7 +77,7 @@ def productQuery(queryType, queryInfo):
         labels = imageRecognition(queryInfo)
     elif queryType == "labels":
         labels = queryInfo
-    elif queryType == "queryInfo":
+    elif queryType == "image binary":
         labels = imageRecognition(queryInfo, True)
 
     potentialMatches = []
@@ -93,7 +93,7 @@ def productQuery(queryType, queryInfo):
             potentialMatches.append(m)
     
     potentialMatches.sort(key=sortLabelKey, reverse=True)
-    return [e[1] for e in potentialMatches[:3]]
+    return [e[1] for e in potentialMatches[:matchLimit]]
 
 def displayMatches(matches):
     i = len(matches)

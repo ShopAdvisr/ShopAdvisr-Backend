@@ -5,6 +5,9 @@ from flask_cors import CORS, cross_origin
 import json
 import base64
 from ProductSuggestion import ProductSuggestion
+import GCFunctions
+GCFunctions.init_import()
+
 
 app = Flask(__name__)
 productSuggestion = ProductSuggestion()
@@ -24,11 +27,13 @@ def product_suggestion():
 
 
     return productSuggestion.run(base64.decodebytes(data))
+
 @app.route('/ocr',methods=["POST"])
 def ocr():
     data = request.get_data()
-    return
-
+    
+    results = GCFunctions.productQuery("image binary", data, 5)
+    return json.dumps(results)
 
 if __name__ == '__main__':
     # Threaded option to enable multiple instances for multiple user access support
