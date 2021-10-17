@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import io
 import os
 
-generatedcsvPath = "Excel Generation\\Generated_Bulk.csv"
+generatedcsvPath = "ExcelGeneration\\Generated_Bulk.csv"
 categories = {
     "Food" : "https://www.loblaws.ca/food/c/27985?navid=flyout-L2-Food",
     "Baby" : "https://www.loblaws.ca/baby/c/27987?navid=flyout-L2-Baby",
@@ -16,12 +16,14 @@ categories = {
 }
 catalog = None
 
-def imageRecognition(img):
+def imageRecognition(img, isBinary = False):
     client = vision.ImageAnnotatorClient()
-
-    # Loads the image into memory
-    with io.open(img, 'rb') as image_file:
-        content = image_file.read()
+    if isBinary:
+        content = img
+    else:
+        # Loads the image into memory
+        with io.open(img, 'rb') as image_file:
+            content = image_file.read()
 
     image = vision.Image(content=content)
 
@@ -75,6 +77,8 @@ def productQuery(queryType, queryInfo):
         labels = imageRecognition(queryInfo)
     elif queryType == "labels":
         labels = queryInfo
+    elif queryType == "queryInfo":
+        labels = imageRecognition(queryInfo, True)
 
     potentialMatches = []
 
@@ -104,8 +108,9 @@ def main():
     #load_dotenv()
     #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
     #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
-    matches = productQuery("image path", "IMG_5452.jpg")
-    displayMatches(matches)
+    #matches = productQuery("image path", "IMG_5452.jpg")
+    #displayMatches(matches)
+    pass
 
 
 init_import()
