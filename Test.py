@@ -1,9 +1,9 @@
 import requests
 import base64
-
-f = open("thanksgiving.mp3", "rb")
+import pprint
+f = open("daughters_birthday.mp3", "rb")
 encoded = base64.b64encode(f.read())
-requests.get("http://127.0.0.1:5000/suggestions",
+pprint.pprint(requests.get("http://127.0.0.1:5000/suggestions",
              data=encoded,
-             headers={"Content-Type": 'application/octet-stream'})
+             headers={"Content-Type": 'application/octet-stream'}).json())
 f.close()

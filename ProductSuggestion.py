@@ -6,7 +6,6 @@ import time
 import sys
 import pprint
 import csv
-from ProductDb import db
 import spacy
 from collections import defaultdict
 import GCFunctions
@@ -31,10 +30,10 @@ class ProductSuggestion:
         audio_url = self.upload_audio(audio)
         audio_id = self.process_audio(audio_url)
 
-        keywords, topics = self.get_audio_data(audio_id)
+        keywords, topics ,text= self.get_audio_data(audio_id)
         associated_words = self.get_associated_words(keywords)
 
-        return GCFunctions.productQuery("labels",associated_words,20)
+        return {'items':GCFunctions.productQuery("labels",associated_words,20),'text':text}
 
 
 
@@ -77,7 +76,7 @@ class ProductSuggestion:
         keywords = [(i['text'], i['rank']) for i in data['auto_highlights_result']['results']]
 
         topics = data["iab_categories_result"]['summary']
-        return keywords, topics
+        return keywords, topics, data["text"]
 
     def upload_audio(self, audio):
         response = requests.post('https://api.assemblyai.com/v2/upload',
