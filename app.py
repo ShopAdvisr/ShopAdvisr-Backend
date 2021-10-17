@@ -19,19 +19,18 @@ def check():
 
 @app.route('/suggestions', methods=["GET","POST"])
 def product_suggestion():
-    print(f'{request.args=}')
-    print(f'{request.data=}')
-    print(f'{request.form=}')
 
     data = request.get_data()
-    print(f'{data=}')
-    print(base64.decodebytes(data))
-    sys.stdout.flush()
 
 
     return productSuggestion.run(base64.decodebytes(data))
+@app.route('/ocr',methods=["POST"])
+def ocr():
+    data = request.get_data()
+    return
 
 
 if __name__ == '__main__':
     # Threaded option to enable multiple instances for multiple user access support
     app.run(threaded=True, port=5000)
+

@@ -10,5 +10,12 @@ class ProductDb:
         for product in self.data:
             if product[1]==name:
                 return product
+    def product_search(self,word):
+        products = []
+        for product in self.data:
+            if word in product[1]:
+                products.append(product)
+        return product
+
 
 db = ProductDb()

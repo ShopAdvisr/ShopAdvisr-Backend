@@ -1,3 +1,4 @@
+import math
 import os
 from dotenv import load_dotenv
 import requests
@@ -5,9 +6,15 @@ import time
 import sys
 import pprint
 import csv
+from ProductDb import db
+import spacy
+from collections import defaultdict
 
 load_dotenv()
-#TODO: CHECK IF WORD IS NOUN
+nlp = spacy.load('en_core_web_sm')
+
+
+# TODO: CHECK IF WORD IS NOUN
 class ProductSuggestion:
     endpoint = "https://api.assemblyai.com/v2/transcript"
 
@@ -18,35 +25,35 @@ class ProductSuggestion:
     }
 
     def __init__(self):
-        print(True)
-
-
+        pass
 
     def run(self, audio):
         audio_url = self.upload_audio(audio)
-        print(audio_url)
-        sys.stdout.flush()
         audio_id = self.process_audio(audio_url)
-        print(audio_id)
-        sys.stdout.flush()
 
         keywords, topics = self.get_audio_data(audio_id)
-        print(keywords, topics)
-        return {'words':keywords,'topics':topics}
         associated_words = self.get_associated_words(keywords)
-        #for word in associated_words:
 
+        results = []
+        print(associated_words)
+        for word in associated_words:
+            results = results + db.product_search(word)
 
+        return results
 
     def get_associated_words(self, keywords):
-        all_words = set()
+        all_words = defaultdict(int)
         for k in keywords:
             for w in k[0].split():
+                if nlp(w)[0].pos_ != "NOUN":
+                    continue
                 related = requests.get(f"https://api.datamuse.com/words?rel_trg={w}").json()
+                for i in related:
+                    if nlp(i['word'])[0].pos_ == "NOUN":
+                        all_words[i['word']] += k[1] * 1000 + i["score"]
 
-                words = {(i['word'], k[1]*1000 * i["score"]) for i in related if i['word']}
-                all_words.union(words)
-        return all_words
+                all_words[w] = math.inf
+        return sorted(set(i for i in all_words.keys()), key=lambda k: all_words[k], reverse=True)
 
     def process_audio(self, audio_url):
         req_data = {
@@ -68,8 +75,6 @@ class ProductSuggestion:
             data = response.json()
             if data["status"] in ["error", "completed"]:
                 completed = True
-        print(data)
-        sys.stdout.flush()
 
         keywords = [(i['text'], i['rank']) for i in data['auto_highlights_result']['results']]
 
@@ -81,4 +86,3 @@ class ProductSuggestion:
                                  headers=self.headers,
                                  data=audio)
         return response.json()["upload_url"]
-ProductSuggestion()
