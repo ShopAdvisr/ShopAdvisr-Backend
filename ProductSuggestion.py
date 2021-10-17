@@ -9,7 +9,7 @@ import csv
 from ProductDb import db
 import spacy
 from collections import defaultdict
-
+import GCFunctions
 load_dotenv()
 nlp = spacy.load('en_core_web_sm')
 
@@ -34,22 +34,20 @@ class ProductSuggestion:
         keywords, topics = self.get_audio_data(audio_id)
         associated_words = self.get_associated_words(keywords)
 
-        results = []
-        print(associated_words)
-        for word in associated_words:
-            results = results + db.product_search(word)
+        return GCFunctions.productQuery("labels",associated_words,20)
 
-        return results
+
 
     def get_associated_words(self, keywords):
         all_words = defaultdict(int)
         for k in keywords:
             for w in k[0].split():
-                if nlp(w)[0].pos_ != "NOUN":
+                if nlp(w)[0].pos_ not in ["NOUN","PROPN"]:
                     continue
                 related = requests.get(f"https://api.datamuse.com/words?rel_trg={w}").json()
+
                 for i in related:
-                    if nlp(i['word'])[0].pos_ == "NOUN":
+                    if nlp(i['word'])[0].pos_ in ["NOUN","PROPN"]:
                         all_words[i['word']] += k[1] * 1000 + i["score"]
 
                 all_words[w] = math.inf

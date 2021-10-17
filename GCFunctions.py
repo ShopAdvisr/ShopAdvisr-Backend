@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import io
 import os
 
-generatedcsvPath = "ExcelGeneration\\Generated_Bulk.csv"
+generatedcsvPath = "ExcelGeneration/Generated_Bulk.csv"
 categories = {
     "Food" : "https://www.loblaws.ca/food/c/27985?navid=flyout-L2-Food",
     "Baby" : "https://www.loblaws.ca/baby/c/27987?navid=flyout-L2-Baby",
@@ -49,6 +49,7 @@ def init_import():
 
     print("Importing file data")
     file = open(generatedcsvPath, "r")
+    print("opened")
     allItems = file.read().split("\n")
     fileKeys = ["Category", "Product", "Product ID", "Price", "Old Price", "Description", "Image URL", "Product URL"]
     catalog = {}
