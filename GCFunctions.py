@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import io
 import os
 
-generatedcsvPath = "ExcelGeneration/Generated_Bulk.csv"
+generatedcsvPath = "ExcelGeneration/Merged_Bulk.csv"
 categories = {
     "Food" : "https://www.loblaws.ca/food/c/27985?navid=flyout-L2-Food",
     "Baby" : "https://www.loblaws.ca/baby/c/27987?navid=flyout-L2-Baby",
@@ -60,7 +60,7 @@ def init_import():
         catalog[data[1]] = {}
         
         for cat in range(len(fileKeys)):
-            catalog[data[1]][fileKeys[cat]] = data[cat]#.replace("[newline]", "\n")
+            catalog[data[1]][fileKeys[cat]] = data[cat].replace("[newline]", "\n")
 
         catalog[data[1]]["Aisle"] = random.randint(1, 20) #Later overriten by product management 
         #print(catalog[data[1]])
@@ -83,7 +83,7 @@ def productQuery(queryType, queryInfo, matchLimit, forcedCategory=None):
     elif queryType == "image binary":
         labels = imageRecognition(queryInfo, True)
 
-    print("Labels: ", labels)
+    #print("Labels: ", labels)
 
     potentialMatches = []
     def insertMatch(product, score):
@@ -94,34 +94,37 @@ def productQuery(queryType, queryInfo, matchLimit, forcedCategory=None):
         
         potentialMatches.append([score, product])
 
-    for label in labels[:5]:
+    for label in labels:
         if queryType != "labels" and label.description.title() in categories:
             forcedCategory = label.description.title()
             continue
+        
+        labelSearch = queryType == "labels" and label.lower() or label.description.lower()
+        labelValue = queryType == "labels" and len(labels) - labels.index(label) or label.score + len(label.description)
 
         for product_name in catalog:
-            if queryType == "labels":
-                if label.lower() in product_name.lower():
-                    insertMatch(catalog[product_name], len(labels) - labels.index(label))
-                    #potentialMatches.append([, catalog[product_name]])
-            else:
-                if label.description.lower() in product_name.lower():
-                    insertMatch(catalog[product_name], label.score + len(label.description))
-                    #potentialMatches.append([label.score + len(label.description), catalog[product_name]])
+            if labelSearch in product_name.lower():
+                insertMatch(catalog[product_name], labelValue)
+            
+            if labelSearch in catalog[product_name]["Description"].lower():
+                insertMatch(catalog[product_name], catalog[product_name]["Description"].lower().count(labelSearch) * labelValue * 0.05)
     
+    """
     categorScored = { e : 0 for e in categories}
     for match in potentialMatches:
         categorScored[match[1]["Category"]] += match[0]
     
     top = max(list(categorScored.values()))
+    """
+
     finalMatches = []
     for match in potentialMatches:
-        if match[1]["Category"] == forcedCategory or forcedCategory == None and categorScored[match[1]["Category"]] == top:
+        if forcedCategory == None or match[1]["Category"] == forcedCategory: #or forcedCategory == None and categorScored[match[1]["Category"]] == top:
             finalMatches.append(match)
     
     finalMatches.sort(key=sortLabelKey, reverse=True)
     final = [e[1] for e in finalMatches[:matchLimit]]
-    print(final)
+    #print(final)
     return final
 
 def displayMatches(matches):
@@ -136,9 +139,15 @@ def displayMatches(matches):
 def main():
     #load_dotenv()
     #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= "C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\credentials.json"
-    matches = productQuery("image path", "Screenshot_20211017-022642.jpg", 5)
-    displayMatches(matches)
+    #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= "C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\credentials.json"
+
+    #matches = productQuery("image path", "temp6.png", 5)
+    #matches = productQuery("labels", ["birthday", "party"], 20)
+    #matches = productQuery("labels", ["birthday", "gift", "for", "wife"], 20)
+    #matches = productQuery("labels", ["I", "want", "to", "take", "my", "baby", "in", "the", "car"], 5)
+    #matches = productQuery("labels", ["cat", "food"], 20)
+
+    #displayMatches(matches)
     pass
 
 
