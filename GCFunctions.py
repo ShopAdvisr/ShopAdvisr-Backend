@@ -12,7 +12,7 @@ categories = {
     "Electronics & Batteries" : "https://www.loblaws.ca/computers-electronics/c/27992?navid=flyout-L2-Electronics%20&%20Batteries",
     "Health & Beauty" : "https://www.loblaws.ca/health-beauty/c/27994?navid=flyout-L2-Health-and-Beauty",
     "Pet Supplies" : "https://www.loblaws.ca/pet-supplies/c/27988?navid=flyout-L2-Pet-Supplies",
-    "Toys, Games & Hobbies" : "https://www.loblaws.ca/toys-games-hobbies/c/27990?navid=flyout-L2-Toys-Games-and-Hobbies"
+    "Toys- Games & Hobbies" : "https://www.loblaws.ca/toys-games-hobbies/c/27990?navid=flyout-L2-Toys-Games-and-Hobbies"
 }
 catalog = None
 
@@ -84,21 +84,26 @@ def productQuery(queryType, queryInfo, matchLimit):
     potentialMatches = []
 
     for label in labels[:5]:
-        localMatches = []
         for product_name in catalog:
             if queryType == "labels":
                 if label.lower() in product_name.lower():
-                    localMatches.append([len(labels) - labels.index(label), catalog[product_name]])
+                    potentialMatches.append([len(labels) - labels.index(label), catalog[product_name]])
             else:
                 if label.description.lower() in product_name.lower():
-                    localMatches.append([label.score + len(label.description), catalog[product_name]])
-        
-        localMatches.sort(key=sortLabelKey, reverse=True)
-        for m in localMatches[:]: #2]:
-            potentialMatches.append(m)
+                    potentialMatches.append([label.score + len(label.description), catalog[product_name]])
     
-    potentialMatches.sort(key=sortLabelKey, reverse=True)
-    return [e[1] for e in potentialMatches[:matchLimit]]
+    categorScored = { e : 0 for e in categories}
+    for match in potentialMatches:
+        categorScored[match[1]["Category"]] += match[0]
+    
+    top = max(list(categorScored.values()))
+    finalMatches = []
+    for match in potentialMatches:
+        if categorScored[match[1]["Category"]] == top:
+            finalMatches.append(match)
+    
+    finalMatches.sort(key=sortLabelKey, reverse=True)
+    return [e[1] for e in finalMatches[:matchLimit]]
 
 def displayMatches(matches):
     i = len(matches)
@@ -113,7 +118,7 @@ def main():
     #load_dotenv()
     #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
     #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
-    #matches = productQuery("image path", "IMG_5452.jpg", 5)
+    #matches = productQuery("image path", "ref.jpg", 5)
     #displayMatches(matches)
     pass
 
