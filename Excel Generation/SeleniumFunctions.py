@@ -24,7 +24,7 @@ categories = {
     "Toys, Games & Hobbies" : "https://www.loblaws.ca/toys-games-hobbies/c/27990?navid=flyout-L2-Toys-Games-and-Hobbies"
 }
 Chrome_options = Options()
-#Chrome_options.add_argument("--headless")
+Chrome_options.add_argument("--headless")
 
 def getProductDetails(link):
     with webdriver.Chrome(chcd, chrome_options=Chrome_options) as driver:
@@ -55,41 +55,48 @@ def getCategoryProducts(category, productsPerCategory, csvfile):
         driver.get(link)
         wait = WebDriverWait(driver, 10)
         print("=========", category, "=========")
+        
+        handled = 0
+        while handled < productsPerCategory:
+            # test item data
+            time.sleep(3)
+            divs = driver.find_elements_by_class_name("product-tile--marketplace")[handled:]
 
-        # expand page
-        for i in range(10):
-            try:
-                element = wait.until(expected_conditions.element_to_be_clickable((By.XPATH, '//*[@id="site-content"]/div/div/div[5]/div/div[2]/div[4]/div/button')))
-                element.click()
-                time.sleep(2)
-            except:
-                pass
+            for product in divs[: min(productsPerCategory, len(divs))]:
+                try:
+                    id_count += 1
+                    handled += 1
 
-        # test item data
-        divs = driver.find_elements_by_class_name("product-tile--marketplace")
+                    driver.execute_script("return arguments[0].scrollIntoView();", product)
+                    
+                    product_image = product.find_elements_by_class_name("responsive-image")[0].get_attribute("src")
+                    product_name = product.find_elements_by_class_name("product-name__item--name")[0].text
+                    product_price = product.find_elements_by_class_name("selling-price-list__item__price--now-price__value")[0].text
+                    old_price_el = product.find_elements_by_class_name("selling-price-list__item__price--was-price__value")
+                    old_price = ""
+                    if (len(old_price_el) > 0):
+                        old_price = old_price_el[0].text
+                    
+                    product_link = product.find_elements_by_class_name("product-tile__details__info__name__link")[0].get_attribute("href")
+                    #description = getProductDetails(product_link)
+                    
+                    csvfile.write(",".join(str(e).replace(",", "-").replace("\n", "[newline]") for e in [
+                            category, product_name, id_count, product_price, old_price, "This is a great " + category, product_image, product_link
+                        ]) + "\n")
 
-        for product in divs[: min(productsPerCategory, len(divs))]:
-            #try:
-            id_count += 1
-
-            driver.execute_script("return arguments[0].scrollIntoView();", product)
+                    print("Handled", product_name)
+                    
+                except:
+                    continue
             
-            product_image = product.find_elements_by_class_name("responsive-image")[0].get_attribute("src")
-            product_name = product.find_elements_by_class_name("product-name__item--name")[0].text
-            product_price = product.find_elements_by_class_name("selling-price-list__item__price--now-price__value")[0].text
-            old_price_el = product.find_elements_by_class_name("selling-price-list__item__price--was-price__value")
-            old_price = ""
-            if (len(old_price_el) > 0):
-                old_price = old_price_el[0].text
-            
-            product_link = product.find_elements_by_class_name("product-tile__details__info__name__link")[0].get_attribute("href")
-            description = getProductDetails(product_link)
-            
-            csvfile.write(",".join(str(e).replace(",", "-").replace("\n", "[newline]") for e in [
-                    category, product_name, id_count, product_price, old_price, description, product_image, product_link
-                ]) + "\n")
+            elements = driver.find_elements_by_class_name("primary-button--load-more-button")
+            if len(elements) == 0:
+                break
 
-            print("Handled", product_name)
+            driver.execute_script("arguments[0].click();", elements[-1])
+            #driver.execute_script("return arguments[0].scrollIntoView();", elements[-1])
+            #time.sleep(0.5)
+            #elements[-1].click()
 
 def automateLoblawsData(filename, productsPerCategory):
     csvfile = open(filename, 'w')
@@ -102,7 +109,7 @@ def automateLoblawsData(filename, productsPerCategory):
     csvfile.close()
 
 def main():
-    automateLoblawsData("Excel Generation\\Generated.csv", 75)
+    automateLoblawsData("Excel Generation\\Generated_Bulk.csv", 1000)
     print("Done")
 
 if __name__ == '__main__':
