@@ -19,13 +19,14 @@ catalog = None
 def imageRecognition(img, isBinary = False):
     client = vision.ImageAnnotatorClient()
     if isBinary:
-        print("Got the binary", img)
+        #print("Got the binary", img)
         print(type(img))
         content = img
     else:
         # Loads the image into memory
         with io.open(img, 'rb') as image_file:
             content = image_file.read()
+        #print(content)
 
     image = vision.Image(content=content)
     print(image)
@@ -136,12 +137,12 @@ def displayMatches(matches):
 def main():
     #load_dotenv()
     #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-    #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= os.getenv("GOOGLE_APPLICATION_CREDENTIALS") #"C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
-    #matches = productQuery("image path", "temp1.png", 5)
-    #displayMatches(matches)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= "C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\credentials.json"
+    matches = productQuery("image path", "Screenshot_20211017-022642.jpg", 5)
+    displayMatches(matches)
     pass
 
 
-init_import()
+#init_import()
 if __name__ == '__main__':
     main()
