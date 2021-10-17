@@ -19,6 +19,8 @@ catalog = None
 def imageRecognition(img, isBinary = False):
     client = vision.ImageAnnotatorClient()
     if isBinary:
+        print("Got the binary", img)
+        print(type(img))
         content = img
     else:
         # Loads the image into memory
@@ -26,10 +28,12 @@ def imageRecognition(img, isBinary = False):
             content = image_file.read()
 
     image = vision.Image(content=content)
+    print(image)
 
     # Performs label detection on the image file
     response = client.label_detection(image=image)
     labels = response.label_annotations
+    print(len(labels))
 
     acceptedLabels = []
 
