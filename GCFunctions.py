@@ -35,10 +35,10 @@ def imageRecognition(img, isBinary = False):
 
     #print('Labels:')
     for label in labels:
-        if not label.description.title() in categories:
+        if True: #not label.description.title() in categories:
             acceptedLabels.append(label)
 
-    #    print(label.description, label.score)
+        #print(label.description, label.score)
         
     return acceptedLabels
 
@@ -49,7 +49,6 @@ def init_import():
 
     print("Importing file data")
     file = open(generatedcsvPath, "r")
-    print("opened")
     allItems = file.read().split("\n")
     fileKeys = ["Category", "Product", "Product ID", "Price", "Old Price", "Description", "Image URL", "Product URL"]
     catalog = {}
@@ -69,7 +68,7 @@ def init_import():
 def sortLabelKey(match):
     return match[0]
 
-def productQuery(queryType, queryInfo, matchLimit):
+def productQuery(queryType, queryInfo, matchLimit, forcedCategory=None):
     if catalog == None:
         init_import()
 
@@ -84,6 +83,10 @@ def productQuery(queryType, queryInfo, matchLimit):
     potentialMatches = []
 
     for label in labels[:5]:
+        if queryType != "labels" and label.description.title() in categories:
+            forcedCategory = label.description.title()
+            continue
+
         for product_name in catalog:
             if queryType == "labels":
                 if label.lower() in product_name.lower():
@@ -99,7 +102,7 @@ def productQuery(queryType, queryInfo, matchLimit):
     top = max(list(categorScored.values()))
     finalMatches = []
     for match in potentialMatches:
-        if categorScored[match[1]["Category"]] == top:
+        if match[1]["Category"] == forcedCategory or forcedCategory == None and categorScored[match[1]["Category"]] == top:
             finalMatches.append(match)
     
     finalMatches.sort(key=sortLabelKey, reverse=True)
@@ -117,9 +120,9 @@ def displayMatches(matches):
 def main():
     #load_dotenv()
     #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-    #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
-    #matches = productQuery("image path", "ref.jpg", 5)
-    #displayMatches(matches)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
+    matches = productQuery("image path", "ref.jpg", 5)
+    displayMatches(matches)
     pass
 
 
