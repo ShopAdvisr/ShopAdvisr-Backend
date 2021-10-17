@@ -144,12 +144,12 @@ def main():
     #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
     #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]= "C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\credentials.json"
 
-    #matches = productQuery("image path", "te.png", 5)
+    #matches = productQuery("image path", "temp5.png", 5)
     #matches = productQuery("labels", ["birthday", "party"], 20)
     #matches = productQuery("labels", ["birthday", "gift", "for", "wife"], 20)
     #matches = productQuery("labels", ["I", "want" "my", "baby", "to", "be", "safe", "in", "the", "car", "with", "my", "back", "turned"], 5)
     #matches = productQuery("labels", ["cat", "food"], 20)
-    #matches = productQuery("labels", ["cellery"], 20)
+    #matches = productQuery("labels", ["celery"], 20)
     #matches = productQuery("labels", ["thanksgiving"], 20)
 
     #displayMatches(matches)

@@ -36,7 +36,7 @@ def getDescription(driver):
 
 number_threads = 4
 thread_duty = 75
-start_duty = 5701
+start_duty = 7501
 
 def handleThread(startVar):
     global finalizedWrites
@@ -106,7 +106,7 @@ def makeMerged():
         "Category", "Product", "Product ID", "Price", "Old Price" , "Description", "Image URL", "Product URL"
     ]) + "\n")
     
-    for st in range(1, 5100, 300):
+    for st in range(1, 7802, 300):
         file = open("ExcelGeneration/Finalized_Bulk" + str(st) + ".csv", 'r')
         allItems = [e for e in file.read().strip().split("\n")[1:]]
         for line_str in allItems:
@@ -116,9 +116,10 @@ def makeMerged():
     csvfile.close()
 
 def main():
-    reformatCSV()
+    #reformatCSV()
     #makeMerged()
-    print("Done")
+    #print("Done")
+    pass
 
 if __name__ == "__main__":
     main()
