@@ -8,7 +8,6 @@ from ProductSuggestion import ProductSuggestion
 import GCFunctions
 GCFunctions.init_import()
 
-
 app = Flask(__name__)
 productSuggestion = ProductSuggestion()
 cors = CORS(app)

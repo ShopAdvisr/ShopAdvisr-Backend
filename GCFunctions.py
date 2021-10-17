@@ -108,7 +108,7 @@ def main():
     #load_dotenv()
     #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
     #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
-    #matches = productQuery("image path", "IMG_5452.jpg")
+    #matches = productQuery("image path", "IMG_5452.jpg", 5)
     #displayMatches(matches)
     pass
 
