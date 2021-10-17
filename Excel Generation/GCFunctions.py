@@ -1,5 +1,5 @@
 from google.cloud import vision
-#from dotenv import load_dotenv
+from dotenv import load_dotenv
 import io
 import os
 
@@ -41,6 +41,7 @@ def imageRecognition(img):
     return acceptedLabels
 
 def init_import():
+    #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
     import random
     global catalog
 
@@ -102,9 +103,10 @@ def displayMatches(matches):
 def main():
     #load_dotenv()
     #os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
+    #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\Noor\\Desktop\\ShopAdvisr-Backend\\shopadvisr-88c9b580feff.json"
     matches = productQuery("image path", "IMG_5452.jpg")
     displayMatches(matches)
+
 
 init_import()
 if __name__ == '__main__':
